@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Toaster } from "./components/ui/sonner";
 import { Header } from "./components/Header";
 import { BottomNav } from "./components/BottomNav";
 import { HomePage } from "./components/HomePage";
@@ -20,6 +21,8 @@ export default function App() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [equipmentDetailType, setEquipmentDetailType] = useState<"laptop" | "brother" | "godex">("laptop");
+  const [equipmentDetailId, setEquipmentDetailId] = useState<number>(15);
 
   useEffect(() => {
     // Apply Telegram theme variables
@@ -67,9 +70,17 @@ export default function App() {
           />
         );
       case "equipment":
-        return <EquipmentPage />;
+        return <EquipmentPage onViewDetails={(type, id) => {
+          setEquipmentDetailType(type);
+          setEquipmentDetailId(id);
+          setActivePage("equipment-detail");
+        }} />;
       case "equipment-detail":
-        return <EquipmentDetailPage onBack={() => setActivePage("equipment")} />;
+        return <EquipmentDetailPage 
+          onBack={() => setActivePage("equipment")} 
+          equipmentType={equipmentDetailType}
+          equipmentId={equipmentDetailId}
+        />;
       case "events":
         return <EventsPage />;
       case "consumables":
@@ -105,6 +116,8 @@ export default function App() {
       {/* Modals and Sheets */}
       <QRScannerModal open={isQRScannerOpen} onClose={() => setIsQRScannerOpen(false)} />
       <NotificationsSheet open={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
+      
+      <Toaster />
     </div>
   );
 }

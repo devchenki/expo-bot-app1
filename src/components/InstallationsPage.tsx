@@ -4,22 +4,18 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
+import { CreateInstallationDialog } from "./CreateInstallationDialog";
+import { toast } from "sonner@2.0.3";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "./ui/dialog";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 
 interface Installation {
   id: number;
@@ -38,12 +34,8 @@ interface InstallationsPageProps {
 
 export function InstallationsPage({ isCreateDialogOpen, onCloseCreateDialog }: InstallationsPageProps) {
   const [filter, setFilter] = useState("all");
-  const [formData, setFormData] = useState({
-    booth: "",
-    laptop: "",
-    printerType: "none",
-    printer: "",
-  });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedInstallation, setSelectedInstallation] = useState<Installation | null>(null);
 
   const installations: Installation[] = [
     { id: 1, booth: "C3", laptop: "Ноутбук #15", printer: "Brother #5", time: "10:30", status: "active", zone: "C" },
@@ -65,11 +57,12 @@ export function InstallationsPage({ isCreateDialogOpen, onCloseCreateDialog }: I
     return inst.zone === filter;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Creating installation:", formData);
-    onCloseCreateDialog();
-    setFormData({ booth: "", laptop: "", printerType: "none", printer: "" });
+  const handleDelete = () => {
+    if (selectedInstallation) {
+      toast.success(`Установка ${selectedInstallation.booth} завершена`);
+      setDeleteDialogOpen(false);
+      setSelectedInstallation(null);
+    }
   };
 
   const statusColors = {
@@ -141,7 +134,15 @@ export function InstallationsPage({ isCreateDialogOpen, onCloseCreateDialog }: I
                 <Edit className="mr-2 h-4 w-4" />
                 Изменить
               </Button>
-              <Button variant="ghost" size="sm" className="flex-1 hover:bg-destructive/10 hover:text-destructive">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex-1 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => {
+                  setSelectedInstallation(installation);
+                  setDeleteDialogOpen(true);
+                }}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Завершить
               </Button>
@@ -150,96 +151,26 @@ export function InstallationsPage({ isCreateDialogOpen, onCloseCreateDialog }: I
         ))}
       </div>
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={onCloseCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Новая установка</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="booth">Номер стойки</Label>
-              <Input
-                id="booth"
-                placeholder="Например: C3"
-                value={formData.booth}
-                onChange={(e) => setFormData({ ...formData, booth: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="laptop">Ноутбук</Label>
-              <Select
-                value={formData.laptop}
-                onValueChange={(value) => setFormData({ ...formData, laptop: value })}
-              >
-                <SelectTrigger id="laptop">
-                  <SelectValue placeholder="Выберите ноутбук" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="15">Ноутбук #15</SelectItem>
-                  <SelectItem value="8">Ноутбук #8</SelectItem>
-                  <SelectItem value="12">Ноутбук #12</SelectItem>
-                  <SelectItem value="3">Ноутбук #3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="printerType">Тип принтера</Label>
-              <Select
-                value={formData.printerType}
-                onValueChange={(value) => setFormData({ ...formData, printerType: value, printer: "" })}
-              >
-                <SelectTrigger id="printerType">
-                  <SelectValue placeholder="Выберите тип" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Без принтера</SelectItem>
-                  <SelectItem value="brother">Brother</SelectItem>
-                  <SelectItem value="godex">Godex</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {formData.printerType !== "none" && (
-              <div className="space-y-2">
-                <Label htmlFor="printer">Номер принтера</Label>
-                <Select
-                  value={formData.printer}
-                  onValueChange={(value) => setFormData({ ...formData, printer: value })}
-                >
-                  <SelectTrigger id="printer">
-                    <SelectValue placeholder="Выберите номер" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formData.printerType === "brother" ? (
-                      <>
-                        <SelectItem value="brother-1">Brother #1</SelectItem>
-                        <SelectItem value="brother-2">Brother #2</SelectItem>
-                        <SelectItem value="brother-3">Brother #3</SelectItem>
-                        <SelectItem value="brother-4">Brother #4</SelectItem>
-                        <SelectItem value="brother-5">Brother #5</SelectItem>
-                      </>
-                    ) : (
-                      <>
-                        <SelectItem value="godex-1">Godex #1</SelectItem>
-                        <SelectItem value="godex-2">Godex #2</SelectItem>
-                        <SelectItem value="godex-3">Godex #3</SelectItem>
-                        <SelectItem value="godex-4">Godex #4</SelectItem>
-                        <SelectItem value="godex-5">Godex #5</SelectItem>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onCloseCreateDialog}>
-                Отмена
-              </Button>
-              <Button type="submit">Создать</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CreateInstallationDialog
+        open={isCreateDialogOpen}
+        onClose={onCloseCreateDialog}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Завершить установку?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Установка {selectedInstallation?.booth} будет помечена как завершенная.
+              Оборудование вернется в пул доступного.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Завершить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

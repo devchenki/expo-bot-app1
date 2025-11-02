@@ -5,13 +5,8 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Progress } from "./ui/progress";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "./ui/dialog";
+import { EditConsumableDialog } from "./EditConsumableDialog";
+import { toast } from "sonner@2.0.3";
 
 interface Consumable {
   id: number;
@@ -25,7 +20,6 @@ export function ConsumablesPage() {
   const [activeTab, setActiveTab] = useState("brother");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Consumable | null>(null);
-  const [operation, setOperation] = useState<"add" | "remove">("add");
   const [amount] = useState(5);
 
   const [consumables, setConsumables] = useState<Consumable[]>([
@@ -39,29 +33,6 @@ export function ConsumablesPage() {
   ]);
 
   const filteredConsumables = consumables.filter((item) => item.type === activeTab);
-
-  const handleOperation = (item: Consumable, type: "add" | "remove") => {
-    setSelectedItem(item);
-    setOperation(type);
-    setDialogOpen(true);
-  };
-
-  const confirmOperation = () => {
-    if (!selectedItem) return;
-    
-    setConsumables(consumables.map(item => {
-      if (item.id === selectedItem.id) {
-        const newQuantity = operation === "add" 
-          ? item.quantity + amount 
-          : Math.max(0, item.quantity - amount);
-        return { ...item, quantity: newQuantity };
-      }
-      return item;
-    }));
-    
-    setDialogOpen(false);
-    setSelectedItem(null);
-  };
 
   const getProgressValue = (quantity: number, minimum: number) => {
     const maxStock = minimum * 5;
@@ -118,7 +89,12 @@ export function ConsumablesPage() {
                 variant="outline" 
                 size="sm" 
                 className="flex-1 hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => handleOperation(item, "remove")}
+                onClick={() => {
+                  const newQty = Math.max(0, item.quantity - amount);
+                  toast.success(`${item.name}`, {
+                    description: `Списано ${amount} шт. Остаток: ${newQty} шт`,
+                  });
+                }}
               >
                 <Minus className="mr-1 h-4 w-4" />
                 {amount}
@@ -127,55 +103,45 @@ export function ConsumablesPage() {
                 variant="outline" 
                 size="sm" 
                 className="flex-1 hover:bg-primary/10 hover:text-primary"
-                onClick={() => handleOperation(item, "add")}
+                onClick={() => {
+                  const newQty = item.quantity + amount;
+                  toast.success(`${item.name}`, {
+                    description: `Добавлено ${amount} шт. Остаток: ${newQty} шт`,
+                  });
+                }}
               >
                 <Plus className="mr-1 h-4 w-4" />
                 {amount}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedItem(item);
+                  setDialogOpen(true);
+                }}
+              >
+                ...
               </Button>
             </CardFooter>
           </Card>
         ))}
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {operation === "add" ? "Добавить" : "Использовать"} расходники
-            </DialogTitle>
-          </DialogHeader>
-          {selectedItem && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Текущее количество:</p>
-                <p className="text-2xl">{selectedItem.quantity} шт</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Операция:</p>
-                <p className="text-xl">
-                  {operation === "add" ? "+" : "-"} {amount} шт
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Новое количество:</p>
-                <p className="text-2xl">
-                  {operation === "add" 
-                    ? selectedItem.quantity + amount 
-                    : Math.max(0, selectedItem.quantity - amount)} шт
-                </p>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Отмена
-            </Button>
-            <Button onClick={confirmOperation}>
-              Подтвердить
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {selectedItem && (
+        <EditConsumableDialog
+          open={dialogOpen}
+          onClose={() => {
+            setDialogOpen(false);
+            setSelectedItem(null);
+          }}
+          consumable={{
+            name: selectedItem.name,
+            quantity: selectedItem.quantity,
+            minimum: selectedItem.minimum,
+          }}
+        />
+      )}
     </div>
   );
 }

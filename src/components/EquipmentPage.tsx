@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Monitor, Printer, Tag, FileText } from "lucide-react";
+import { Monitor, Printer, Tag, Eye } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -15,7 +15,11 @@ interface Equipment {
   usageCount: number;
 }
 
-export function EquipmentPage() {
+interface EquipmentPageProps {
+  onViewDetails?: (type: "laptop" | "brother" | "godex", id: number) => void;
+}
+
+export function EquipmentPage({ onViewDetails }: EquipmentPageProps) {
   const [activeTab, setActiveTab] = useState("laptops");
 
   const equipment: Equipment[] = [
@@ -104,8 +108,13 @@ export function EquipmentPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" size="sm" className="w-full hover:bg-primary/10 hover:text-primary">
-                <FileText className="mr-2 h-4 w-4" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full hover:bg-primary/10 hover:text-primary"
+                onClick={() => onViewDetails?.(item.type, item.id)}
+              >
+                <Eye className="mr-2 h-4 w-4" />
                 Детали
               </Button>
             </CardFooter>
