@@ -144,8 +144,8 @@ export function useTelegramAuth() {
       // Пробуем получить через Supabase API
       // Импортируем конфигурацию Supabase
       const { SUPABASE_URL, SUPABASE_KEY } = await import('../lib/api/config');
-      const supabaseUrl = SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const supabaseUrl = SUPABASE_URL;
+      const supabaseKey = SUPABASE_KEY;
       
       if (supabaseUrl && supabaseKey) {
         try {
