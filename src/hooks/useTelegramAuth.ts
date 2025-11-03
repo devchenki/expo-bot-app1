@@ -80,10 +80,12 @@ export function useTelegramAuth() {
 
       setInitData(tg.initDataUnsafe);
       
-      // Слушаем обновления темы Telegram
-      tg.onEvent('themeChanged', () => {
-        // Можно обновить тему приложения
-      });
+      // Слушаем обновления темы Telegram (если доступно)
+      if (tg.onEvent) {
+        tg.onEvent('themeChanged', () => {
+          // Можно обновить тему приложения
+        });
+      }
       
     } else {
       // Development mode - используем тестового пользователя
