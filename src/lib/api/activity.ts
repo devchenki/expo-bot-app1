@@ -21,7 +21,8 @@ export interface ActivityDisplay {
   avatar_url?: string;  // URL аватара из Telegram
   action: string;
   item: string;
-  time: string;
+  time: string;  // Отформатированная строка для отображения
+  created_at?: string;  // Исходная ISO дата для парсинга
 }
 
 export const activityApi = {
@@ -58,6 +59,7 @@ export const activityApi = {
         action,
         item: activity.item_name,
         time,
+        created_at: activity.created_at,  // Сохраняем исходную дату для парсинга
       };
     });
   },

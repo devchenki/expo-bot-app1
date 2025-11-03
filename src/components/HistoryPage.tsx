@@ -7,17 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Separator } from "./ui/separator";
 import { useActivity } from "../hooks/useActivity";
 
-// Extend Window interface for Telegram WebApp
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: {
-        ready: () => void;
-        expand: () => void;
-      };
-    };
-  }
-}
+// Types are declared in useTelegramAuth.ts to avoid conflicts
 
 interface HistoryItem {
   id: number;
@@ -47,17 +37,48 @@ export function HistoryPage() {
         type = "archive";
       }
       
-      // Форматируем дату
-      const date = new Date(activity.time);
+      // Форматируем дату - используем created_at если доступно, иначе time
+      let date: Date;
+      if (activity.created_at) {
+        // Используем исходную ISO дату
+        date = new Date(activity.created_at);
+      } else if (activity.time) {
+        // Пробуем парсить отформатированную строку (fallback)
+        // Извлекаем дату из строки вида "3 ноября 2025 г. в 18:39"
+        try {
+          // Пытаемся найти год, месяц, день в строке
+          const timeMatch = activity.time.match(/(\d+)\s+(\w+)\s+(\d+)/);
+          if (timeMatch) {
+            // Простой парсинг для русского формата
+            date = new Date(activity.time);
+          } else {
+            date = new Date();
+          }
+        } catch {
+          date = new Date();
+        }
+      } else {
+        date = new Date();
+      }
+      
+      // Проверяем, что дата валидна
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date for activity:', activity);
+        date = new Date();
+      }
+      
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       
+      // Сбрасываем время для сравнения
+      const activityDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      
       let dateStr = "Раньше";
-      if (date >= today) {
+      if (activityDate.getTime() === today.getTime()) {
         dateStr = "Сегодня";
-      } else if (date >= yesterday) {
+      } else if (activityDate.getTime() === yesterday.getTime()) {
         dateStr = "Вчера";
       }
       
@@ -145,6 +166,14 @@ export function HistoryPage() {
                           <AvatarImage 
                             src={item.avatar_url} 
                             alt={item.user}
+                            onError={(e) => {
+                              console.warn('Failed to load avatar:', item.avatar_url, 'for user:', item.user);
+                              // Скрываем изображение при ошибке загрузки, fallback покажется автоматически
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                            onLoad={() => {
+                              console.log('Avatar loaded successfully:', item.avatar_url, 'for user:', item.user);
+                            }}
                           />
                         ) : null}
                         <AvatarFallback className="bg-primary/10 text-xs text-primary">

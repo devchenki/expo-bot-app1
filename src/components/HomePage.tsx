@@ -180,6 +180,14 @@ export function HomePage({ onCreateInstallation, onNavigate }: HomePageProps) {
                         <AvatarImage 
                           src={activity.avatar_url} 
                           alt={activity.user}
+                          onError={(e) => {
+                            console.warn('Failed to load avatar:', activity.avatar_url, 'for user:', activity.user);
+                            // Скрываем изображение при ошибке загрузки, fallback покажется автоматически
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log('Avatar loaded successfully:', activity.avatar_url, 'for user:', activity.user);
+                          }}
                         />
                       ) : null}
                       <AvatarFallback className="bg-primary/10 text-xs text-primary">
