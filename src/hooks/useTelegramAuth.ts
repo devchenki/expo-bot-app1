@@ -79,11 +79,13 @@ export function useTelegramAuth() {
           console.log('Setting user data:', userData);
           setUser(userData);
           
-          // Если есть photo_url, используем его
+          // Если есть photo_url из initDataUnsafe, используем его (лучший вариант)
           if (userData.photo_url) {
+            console.log('Using photo_url from initDataUnsafe:', userData.photo_url);
             setAvatarUrl(userData.photo_url);
           } else {
-            // Пытаемся получить фото через Bot API (если нужно)
+            // Пытаемся получить фото через Bot API
+            console.log('photo_url not found in initDataUnsafe, fetching from Bot API...');
             fetchUserAvatar(tgUser.id);
           }
         } else {
@@ -139,10 +141,48 @@ export function useTelegramAuth() {
   // Функция для получения аватара пользователя через бота
   const fetchUserAvatar = async (userId: number) => {
     try {
-      // Можно добавить запрос к вашему бэкенду для получения фото
-      // Например через Bot API: https://api.telegram.org/bot<token>/getUserProfilePhotos
-      // Но это нужно делать через ваш backend для безопасности токена
-      // Пока оставляем как есть - photo_url из initDataUnsafe должен работать
+      // Пробуем получить через Supabase API
+      // Импортируем конфигурацию Supabase
+      const { SUPABASE_URL, SUPABASE_KEY } = await import('../lib/api/config');
+      const supabaseUrl = SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (supabaseUrl && supabaseKey) {
+        try {
+          // Пробуем получить аватар из activity_log (если он там сохранен)
+          // Это работает, если пользователь уже делал какие-то действия
+          const response = await fetch(
+            `${supabaseUrl}/rest/v1/activity_log?user_id=eq.${userId}&select=avatar_url&limit=1&order=created_at.desc`,
+            {
+              headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+              },
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.length > 0 && data[0].avatar_url) {
+              console.log('Found avatar_url in activity_log:', data[0].avatar_url);
+              setAvatarUrl(data[0].avatar_url);
+              return;
+            }
+          }
+        } catch (supabaseError) {
+          console.log('Could not get avatar from Supabase:', supabaseError);
+        }
+      }
+      
+      // Если не удалось получить, пробуем Telegram CDN (может не работать из-за конфиденциальности)
+      // Но это единственный способ получить аватар без backend запроса
+      const telegramCdnUrl = `https://cdn.telegram.org/widget/photo?size=m&user_id=${userId}`;
+      console.log('Trying Telegram CDN URL:', telegramCdnUrl);
+      
+      // Проверяем, доступен ли этот URL (не всегда работает)
+      // Устанавливаем его, но AvatarImage сам попробует загрузить
+      setAvatarUrl(telegramCdnUrl);
+      
     } catch (error) {
       console.error('Error fetching user avatar:', error);
     }
