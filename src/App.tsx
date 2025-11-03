@@ -34,25 +34,68 @@ export default function App() {
     // Apply Telegram theme variables
     const root = document.documentElement;
     
+    // Функция для применения цветов темы Telegram
+    const applyTelegramTheme = () => {
+      if (window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        
+        // Применяем все доступные цвета темы Telegram
+        if (tg.themeParams.bg_color) {
+          root.style.setProperty('--background', tg.themeParams.bg_color);
+        }
+        if (tg.themeParams.text_color) {
+          root.style.setProperty('--foreground', tg.themeParams.text_color);
+        }
+        if (tg.themeParams.button_color) {
+          root.style.setProperty('--primary', tg.themeParams.button_color);
+          root.style.setProperty('--ring', tg.themeParams.button_color);
+          root.style.setProperty('--sidebar-primary', tg.themeParams.button_color);
+          root.style.setProperty('--sidebar-ring', tg.themeParams.button_color);
+          root.style.setProperty('--chart-1', tg.themeParams.button_color);
+        }
+        if (tg.themeParams.button_text_color) {
+          root.style.setProperty('--primary-foreground', tg.themeParams.button_text_color);
+          root.style.setProperty('--sidebar-primary-foreground', tg.themeParams.button_text_color);
+        }
+        if (tg.themeParams.secondary_bg_color) {
+          root.style.setProperty('--card', tg.themeParams.secondary_bg_color);
+          root.style.setProperty('--popover', tg.themeParams.secondary_bg_color);
+        }
+        if (tg.themeParams.hint_color) {
+          root.style.setProperty('--muted-foreground', tg.themeParams.hint_color);
+        }
+        if (tg.themeParams.link_color) {
+          root.style.setProperty('--accent', tg.themeParams.link_color);
+        }
+        
+        console.log('Telegram theme applied:', tg.themeParams);
+      }
+    };
+    
     // Check if Telegram WebApp is available
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
       
-      // Apply Telegram theme colors if available
-      if (tg.themeParams.bg_color) {
-        root.style.setProperty('--background', tg.themeParams.bg_color);
+      // Применяем тему сразу
+      applyTelegramTheme();
+      
+      // Слушаем изменения темы (например, при переключении светлой/темной темы в Telegram)
+      if (tg.onEvent) {
+        tg.onEvent('themeChanged', () => {
+          console.log('Theme changed, reapplying...');
+          applyTelegramTheme();
+        });
       }
-      if (tg.themeParams.text_color) {
-        root.style.setProperty('--foreground', tg.themeParams.text_color);
+      
+      // Также слушаем изменения через viewport
+      if (tg.viewportHeight) {
+        tg.viewportStableHeight = tg.viewportHeight;
       }
-      if (tg.themeParams.button_color) {
-        root.style.setProperty('--primary', tg.themeParams.button_color);
-      }
-      if (tg.themeParams.button_text_color) {
-        root.style.setProperty('--primary-foreground', tg.themeParams.button_text_color);
-      }
+    } else {
+      // Если не в Telegram, используем дефолтные цвета из CSS
+      console.log('Not in Telegram Web App, using default theme');
     }
   }, []);
 
@@ -144,6 +187,9 @@ declare global {
       WebApp: {
         ready: () => void;
         expand: () => void;
+        onEvent?: (event: string, handler: () => void) => void;
+        viewportHeight?: number;
+        viewportStableHeight?: number;
         themeParams: {
           bg_color?: string;
           text_color?: string;
