@@ -1,15 +1,17 @@
+import React from "react";
 import { User, Info, ChevronRight, MessageSquare, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { Separator } from "./ui/separator";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
+import { Badge } from "./ui/badge";
 
 export function SettingsPage() {
-  const { user, initData } = useTelegramAuth();
+  const { user, initData, isTelegram, avatarUrl } = useTelegramAuth();
 
   const handleOpenBot = () => {
-    if (window.Telegram?.WebApp) {
+    if (window.Telegram?.WebApp?.openLink) {
       window.Telegram.WebApp.openLink("https://t.me/exporeg_bot", {
         try_instant_view: true
       });
@@ -45,17 +47,31 @@ export function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
             <Avatar className="h-16 w-16">
+              {avatarUrl && (
+                <AvatarImage src={avatarUrl} alt={getFullName()} />
+              )}
               <AvatarFallback className="bg-primary/10 text-lg text-primary">
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="font-medium">{getFullName()}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium">{getFullName()}</p>
+                {user?.is_premium && (
+                  <Badge variant="secondary" className="text-xs">⭐ Premium</Badge>
+                )}
+              </div>
               {user?.username && (
                 <p className="text-sm text-muted-foreground">@{user.username}</p>
               )}
               {!user?.username && (
                 <p className="text-xs text-muted-foreground">ID: {user?.id}</p>
+              )}
+              {isTelegram && (
+                <p className="text-xs text-green-500/70 mt-1">✓ Подключено через Telegram</p>
+              )}
+              {!isTelegram && (
+                <p className="text-xs text-yellow-500/70 mt-1">⚠ Тестовый режим</p>
               )}
             </div>
           </div>
