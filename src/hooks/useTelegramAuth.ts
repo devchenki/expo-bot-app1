@@ -44,58 +44,96 @@ export function useTelegramAuth() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Проверяем, что запущено в Telegram
-    if (window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
-      
-      setIsTelegram(true);
+    // Функция для инициализации Telegram WebApp
+    const initTelegramWebApp = () => {
+      // Проверяем, что скрипт загружен и WebApp доступен
+      if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        setIsTelegram(true);
+        
+        console.log('Telegram WebApp initialized:', {
+          hasWebApp: true,
+          initDataUnsafe: tg.initDataUnsafe,
+          user: tg.initDataUnsafe?.user,
+        });
 
-      // Получаем данные пользователя из Telegram Web App
-      const tgUser = tg.initDataUnsafe?.user;
-      if (tgUser) {
-        // Получаем все доступные данные пользователя
-        const userData: TelegramUser = {
-          id: tgUser.id,
-          first_name: tgUser.first_name || '',
-          last_name: tgUser.last_name,
-          username: tgUser.username,
-          language_code: tgUser.language_code,
-          photo_url: tgUser.photo_url, // URL фото профиля (если доступно)
-          is_premium: tgUser.is_premium,
-        };
-        
-        setUser(userData);
-        
-        // Если есть photo_url, используем его
-        if (userData.photo_url) {
-          setAvatarUrl(userData.photo_url);
+        // Получаем данные пользователя из Telegram Web App
+        const tgUser = tg.initDataUnsafe?.user;
+        if (tgUser) {
+          console.log('Telegram user found:', tgUser);
+          
+          // Получаем все доступные данные пользователя
+          const userData: TelegramUser = {
+            id: tgUser.id,
+            first_name: tgUser.first_name || '',
+            last_name: tgUser.last_name,
+            username: tgUser.username,
+            language_code: tgUser.language_code,
+            photo_url: tgUser.photo_url, // URL фото профиля (если доступно)
+            is_premium: tgUser.is_premium,
+          };
+          
+          console.log('Setting user data:', userData);
+          setUser(userData);
+          
+          // Если есть photo_url, используем его
+          if (userData.photo_url) {
+            setAvatarUrl(userData.photo_url);
+          } else {
+            // Пытаемся получить фото через Bot API (если нужно)
+            fetchUserAvatar(tgUser.id);
+          }
         } else {
-          // Пытаемся получить фото через Bot API (если нужно)
-          // Это можно сделать через бэкенд запрос
-          fetchUserAvatar(tgUser.id);
+          console.warn('Telegram user data not found in initDataUnsafe');
         }
-      }
 
-      setInitData(tg.initDataUnsafe);
-      
-      // Слушаем обновления темы Telegram (если доступно)
-      if (tg.onEvent) {
-        tg.onEvent('themeChanged', () => {
-          // Можно обновить тему приложения
+        setInitData(tg.initDataUnsafe);
+        
+        // Слушаем обновления темы Telegram (если доступно)
+        if (tg.onEvent) {
+          tg.onEvent('themeChanged', () => {
+            // Можно обновить тему приложения
+          });
+        }
+        
+        return true;
+      }
+      return false;
+    };
+
+    // Пробуем инициализировать сразу
+    if (initTelegramWebApp()) {
+      return;
+    }
+
+    // Если скрипт еще не загружен, ждем его загрузки
+    const checkInterval = setInterval(() => {
+      if (initTelegramWebApp()) {
+        clearInterval(checkInterval);
+      }
+    }, 100);
+
+    // Останавливаем проверку через 5 секунд
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval);
+      if (!window.Telegram?.WebApp) {
+        console.warn('Telegram WebApp script not loaded, using test user');
+        setIsTelegram(false);
+        setUser({
+          id: 694377627,
+          first_name: 'Тестовый',
+          username: 'test_user',
         });
       }
-      
-    } else {
-      // Development mode - используем тестового пользователя
-      setIsTelegram(false);
-      setUser({
-        id: 694377627,
-        first_name: 'Тестовый',
-        username: 'test_user',
-      });
-    }
+    }, 5000);
+
+    return () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+    };
   }, []);
 
   // Функция для получения аватара пользователя через бота

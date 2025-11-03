@@ -14,6 +14,7 @@ import { Label } from "./ui/label";
 import { toast } from "sonner";
 import { Separator } from "./ui/separator";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
+import { activityApi } from "../lib/api";
 
 interface EditConsumableDialogProps {
   open: boolean;
@@ -90,6 +91,24 @@ export function EditConsumableDialog({ open, onClose, consumable }: EditConsumab
       toast.success(`${consumable.name}`, {
         description: message + `. Новый остаток: ${newQuantity} шт`,
       });
+
+      // Создаем запись активности с указанием количества
+      try {
+        const oldQuantity = consumable.quantity;
+        const quantityInfo = oldQuantity !== newQuantity
+          ? ` (было: ${oldQuantity} → стало: ${newQuantity})`
+          : ` (количество: ${newQuantity})`;
+        
+        await activityApi.create({
+          user_id: user?.id?.toString() || "",
+          username: user?.username || user?.first_name || "Unknown",
+          action_type: "update_consumable",
+          item_type: consumable.type || "consumable",
+          item_name: `${consumable.name}${quantityInfo}`,
+        });
+      } catch (activityError) {
+        console.error("Error logging activity:", activityError);
+      }
 
       // Обновляем активность после изменения расходника
       window.dispatchEvent(new Event('activityNeedsUpdate'));

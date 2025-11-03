@@ -66,6 +66,42 @@ export function CreateInstallationDialog({ open, onClose, onSuccess }: CreateIns
   
   // Получаем список занятых стоек
   const occupiedRacks = new Set(installations.map(inst => inst.rack));
+  
+  // Получаем список занятых ноутбуков
+  const occupiedLaptops = new Set(
+    installations
+      .map(inst => inst.laptop)
+      .filter(Boolean)
+      .map(l => Number(l))
+  );
+  
+  // Получаем список занятых принтеров Brother
+  const occupiedBrotherPrinters = new Set(
+    installations
+      .filter(inst => inst.printer_type === 'brother' && inst.printer_number)
+      .map(inst => inst.printer_number!)
+  );
+  
+  // Получаем список занятых принтеров Godex
+  const occupiedGodexPrinters = new Set(
+    installations
+      .filter(inst => inst.printer_type === 'godex' && inst.printer_number)
+      .map(inst => inst.printer_number!)
+  );
+  
+  // Получаем список занятых вторых принтеров Brother
+  const occupiedSecondBrotherPrinters = new Set(
+    installations
+      .filter(inst => inst.second_printer_type === 'brother' && inst.second_printer_number)
+      .map(inst => inst.second_printer_number!)
+  );
+  
+  // Получаем список занятых вторых принтеров Godex
+  const occupiedSecondGodexPrinters = new Set(
+    installations
+      .filter(inst => inst.second_printer_type === 'godex' && inst.second_printer_number)
+      .map(inst => inst.second_printer_number!)
+  );
 
   // Извлекаем зоны из выбранного мероприятия
   const getEventZones = (eventId: number | null): string[] => {
@@ -309,18 +345,25 @@ export function CreateInstallationDialog({ open, onClose, onSuccess }: CreateIns
             </div>
             <div className="space-y-2">
               <div className="grid grid-cols-5 gap-2">
-                {laptopItems.map((num) => (
-                  <Button
-                    key={num}
-                    variant={selectedLaptop === num ? "default" : "outline"}
-                    onClick={() => {
-                      setSelectedLaptop(num);
-                      setStep("printer-type");
-                    }}
-                  >
-                    #{num}
-                  </Button>
-                ))}
+                {laptopItems.map((num) => {
+                  const isOccupied = occupiedLaptops.has(num);
+                  return (
+                    <Button
+                      key={num}
+                      variant={selectedLaptop === num ? "default" : "outline"}
+                      disabled={isOccupied}
+                      onClick={() => {
+                        if (!isOccupied) {
+                          setSelectedLaptop(num);
+                          setStep("printer-type");
+                        }
+                      }}
+                      className={isOccupied ? "opacity-50 cursor-not-allowed" : ""}
+                    >
+                      #{num}
+                    </Button>
+                  );
+                })}
               </div>
               {laptopTotalPages > 1 && (
                 <div className="flex items-center justify-between pt-2">
@@ -404,6 +447,9 @@ export function CreateInstallationDialog({ open, onClose, onSuccess }: CreateIns
 
       case "printer-number":
         const printers = printerType === "brother" ? BROTHER_PRINTERS : GODEX_PRINTERS;
+        const occupiedPrinters = printerType === "brother" 
+          ? occupiedBrotherPrinters 
+          : occupiedGodexPrinters;
         const printerItems = getPaginatedItems(printers, printerPage);
         const printerTotalPages = getTotalPages(printers);
         return (
@@ -418,18 +464,25 @@ export function CreateInstallationDialog({ open, onClose, onSuccess }: CreateIns
             </div>
             <div className="space-y-2">
               <div className="grid grid-cols-5 gap-2">
-                {printerItems.map((num) => (
-                  <Button
-                    key={num}
-                    variant={selectedPrinter === num ? "default" : "outline"}
-                    onClick={() => {
-                      setSelectedPrinter(num);
-                      setStep("second-printer-type");
-                    }}
-                  >
-                    #{num}
-                  </Button>
-                ))}
+                {printerItems.map((num) => {
+                  const isOccupied = occupiedPrinters.has(num);
+                  return (
+                    <Button
+                      key={num}
+                      variant={selectedPrinter === num ? "default" : "outline"}
+                      disabled={isOccupied}
+                      onClick={() => {
+                        if (!isOccupied) {
+                          setSelectedPrinter(num);
+                          setStep("second-printer-type");
+                        }
+                      }}
+                      className={isOccupied ? "opacity-50 cursor-not-allowed" : ""}
+                    >
+                      #{num}
+                    </Button>
+                  );
+                })}
               </div>
               {printerTotalPages > 1 && (
                 <div className="flex items-center justify-between pt-2">
@@ -523,17 +576,33 @@ export function CreateInstallationDialog({ open, onClose, onSuccess }: CreateIns
             </div>
             <div className="space-y-2">
               <div className="grid grid-cols-5 gap-2">
-                {secondPrinterItems.map((num) => (
-                  <Button
-                    key={num}
-                    variant={selectedSecondPrinter === num ? "default" : "outline"}
-                    onClick={() => {
-                      setSelectedSecondPrinter(num);
-                    }}
-                  >
-                    #{num}
-                  </Button>
-                ))}
+                {secondPrinterItems.map((num) => {
+                  // Проверяем, не занят ли принтер как первый или второй
+                  const isOccupiedAsSecond = secondPrinterType === "brother" 
+                    ? occupiedSecondBrotherPrinters.has(num)
+                    : occupiedSecondGodexPrinters.has(num);
+                  const isOccupiedAsFirst = secondPrinterType === "brother"
+                    ? occupiedBrotherPrinters.has(num)
+                    : occupiedGodexPrinters.has(num);
+                  const isOccupied = isOccupiedAsSecond || isOccupiedAsFirst;
+                  
+                  return (
+                    <Button
+                      key={num}
+                      variant={selectedSecondPrinter === num ? "default" : "outline"}
+                      disabled={isOccupied}
+                      onClick={() => {
+                        if (!isOccupied) {
+                          setSelectedSecondPrinter(num);
+                          handleSubmit();
+                        }
+                      }}
+                      className={isOccupied ? "opacity-50 cursor-not-allowed" : ""}
+                    >
+                      #{num}
+                    </Button>
+                  );
+                })}
               </div>
               {secondPrinterTotalPages > 1 && (
                 <div className="flex items-center justify-between pt-2">

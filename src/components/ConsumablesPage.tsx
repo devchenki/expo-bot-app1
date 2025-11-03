@@ -9,6 +9,8 @@ import { EditConsumableDialog } from "./EditConsumableDialog";
 import { toast } from "sonner";
 import { Skeleton } from "./ui/skeleton";
 import { useConsumables } from "../hooks/useConsumables";
+import { useTelegramAuth } from "../hooks/useTelegramAuth";
+import { activityApi } from "../lib/api";
 
 interface Consumable {
   id: number;
@@ -26,6 +28,7 @@ export function ConsumablesPage() {
   const [amount] = useState(5);
 
   const { brotherConsumables, godexConsumables, loading, refetch, updateBrother, updateGodex } = useConsumables();
+  const { user } = useTelegramAuth();
   
   const consumables = [
     ...(brotherConsumables?.map(item => ({
@@ -105,12 +108,27 @@ export function ConsumablesPage() {
                 className="flex-1 hover:bg-destructive/10 hover:text-destructive"
                 onClick={async () => {
                   try {
+                    const oldQty = item.quantity;
                     const newQty = Math.max(0, item.quantity - amount);
                     if (item.type === "brother") {
                       await updateBrother(item.id, newQty);
                     } else {
                       await updateGodex(item.id, newQty);
                     }
+                    
+                    // Создаем запись активности с количеством
+                    try {
+                      await activityApi.create({
+                        user_id: user?.id?.toString() || "",
+                        username: user?.username || user?.first_name || "Unknown",
+                        action_type: "update_consumable",
+                        item_type: item.type,
+                        item_name: `${item.name} (было: ${oldQty} → стало: ${newQty})`,
+                      });
+                    } catch (activityError) {
+                      console.error("Error logging activity:", activityError);
+                    }
+                    
                     // Обновляем активность после изменения
                     window.dispatchEvent(new Event('activityNeedsUpdate'));
                   } catch (error) {
@@ -127,12 +145,27 @@ export function ConsumablesPage() {
                 className="flex-1 hover:bg-primary/10 hover:text-primary"
                 onClick={async () => {
                   try {
+                    const oldQty = item.quantity;
                     const newQty = item.quantity + amount;
                     if (item.type === "brother") {
                       await updateBrother(item.id, newQty);
                     } else {
                       await updateGodex(item.id, newQty);
                     }
+                    
+                    // Создаем запись активности с количеством
+                    try {
+                      await activityApi.create({
+                        user_id: user?.id?.toString() || "",
+                        username: user?.username || user?.first_name || "Unknown",
+                        action_type: "update_consumable",
+                        item_type: item.type,
+                        item_name: `${item.name} (было: ${oldQty} → стало: ${newQty})`,
+                      });
+                    } catch (activityError) {
+                      console.error("Error logging activity:", activityError);
+                    }
+                    
                     // Обновляем активность после изменения
                     window.dispatchEvent(new Event('activityNeedsUpdate'));
                   } catch (error) {
@@ -172,10 +205,24 @@ export function ConsumablesPage() {
             quantity: selectedItem.quantity,
             minimum: selectedItem.minimum,
             onUpdate: async (quantity: number) => {
+              const oldQty = selectedItem.quantity;
               if (selectedItem.type === "brother") {
                 await updateBrother(selectedItem.id, quantity);
               } else {
                 await updateGodex(selectedItem.id, quantity);
+              }
+              
+              // Создаем запись активности с количеством
+              try {
+                await activityApi.create({
+                  user_id: user?.id?.toString() || "",
+                  username: user?.username || user?.first_name || "Unknown",
+                  action_type: "update_consumable",
+                  item_type: selectedItem.type,
+                  item_name: `${selectedItem.name} (было: ${oldQty} → стало: ${quantity})`,
+                });
+              } catch (activityError) {
+                console.error("Error logging activity:", activityError);
               }
             },
           }}
