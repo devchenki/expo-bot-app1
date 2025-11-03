@@ -150,6 +150,10 @@ export function InstallationsPage({ isCreateDialogOpen, onCloseCreateDialog, onC
         }
         
         toast.success(`Установка завершена`);
+        
+        // Обновляем активность после завершения установки
+        window.dispatchEvent(new Event('activityNeedsUpdate'));
+        
         setDeleteDialogOpen(false);
         setSelectedInstallation(null);
       } catch (error) {

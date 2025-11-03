@@ -99,6 +99,9 @@ export function CreateEventDialog({ open, onClose }: CreateEventDialogProps) {
 
       // Обновляем список событий
       await refetch();
+      
+      // Обновляем активность после создания мероприятия
+      window.dispatchEvent(new Event('activityNeedsUpdate'));
 
       // Логируем активность
       try {

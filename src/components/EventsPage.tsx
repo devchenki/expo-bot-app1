@@ -95,6 +95,9 @@ export function EventsPage() {
         console.error("Error logging activity:", activityError);
       }
       
+      // Обновляем активность после завершения мероприятия
+      window.dispatchEvent(new Event('activityNeedsUpdate'));
+      
       setSelectedEvent(null);
     } catch (error) {
       console.error("Error completing event:", error);
@@ -123,6 +126,9 @@ export function EventsPage() {
         } catch (activityError) {
           console.error("Error logging activity:", activityError);
         }
+        
+        // Обновляем активность после удаления мероприятия
+        window.dispatchEvent(new Event('activityNeedsUpdate'));
         
         setDeleteDialogOpen(false);
         setEventToDelete(null);

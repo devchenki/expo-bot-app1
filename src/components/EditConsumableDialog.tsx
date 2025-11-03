@@ -91,6 +91,9 @@ export function EditConsumableDialog({ open, onClose, consumable }: EditConsumab
         description: message + `. Новый остаток: ${newQuantity} шт`,
       });
 
+      // Обновляем активность после изменения расходника
+      window.dispatchEvent(new Event('activityNeedsUpdate'));
+
       onClose();
     } catch (error) {
       console.error("Error updating consumable:", error);

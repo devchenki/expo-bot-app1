@@ -151,6 +151,9 @@ export function CreateInstallationDialog({ open, onClose, onSuccess }: CreateIns
         description: equipmentDesc,
       });
       
+      // Обновляем активность после создания установки
+      window.dispatchEvent(new Event('activityNeedsUpdate'));
+      
       // Обновляем список установок
       if (onSuccess) {
         onSuccess();

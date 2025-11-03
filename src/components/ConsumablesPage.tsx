@@ -111,6 +111,8 @@ export function ConsumablesPage() {
                     } else {
                       await updateGodex(item.id, newQty);
                     }
+                    // Обновляем активность после изменения
+                    window.dispatchEvent(new Event('activityNeedsUpdate'));
                   } catch (error) {
                     console.error("Error updating consumable:", error);
                   }
@@ -131,6 +133,8 @@ export function ConsumablesPage() {
                     } else {
                       await updateGodex(item.id, newQty);
                     }
+                    // Обновляем активность после изменения
+                    window.dispatchEvent(new Event('activityNeedsUpdate'));
                   } catch (error) {
                     console.error("Error updating consumable:", error);
                   }

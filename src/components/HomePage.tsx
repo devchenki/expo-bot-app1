@@ -28,7 +28,37 @@ interface HomePageProps {
 export function HomePage({ onCreateInstallation, onNavigate }: HomePageProps) {
   const { installations } = useInstallations();
   const { laptops } = useEquipment();
-  const { activities: recentActivities } = useActivity(5);
+  const { activities: recentActivities, refetch: refetchActivity } = useActivity(5);
+  
+  // Обновляем активность при возврате на страницу и периодически
+  useEffect(() => {
+    // Обновляем при монтировании
+    refetchActivity();
+    
+    // Обновляем при возврате фокуса на страницу
+    const handleFocus = () => {
+      refetchActivity();
+    };
+    
+    // Обновляем при глобальном событии (после изменений данных)
+    const handleActivityUpdate = () => {
+      refetchActivity();
+    };
+    
+    // Периодическое обновление каждые 30 секунд
+    const interval = setInterval(() => {
+      refetchActivity();
+    }, 30000);
+    
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('activityNeedsUpdate', handleActivityUpdate);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('activityNeedsUpdate', handleActivityUpdate);
+    };
+  }, [refetchActivity]);
   
   // Вычисляем статистику
   const totalInstallations = installations.length;

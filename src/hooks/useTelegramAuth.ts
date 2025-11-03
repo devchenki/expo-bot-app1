@@ -44,97 +44,55 @@ export function useTelegramAuth() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Ждем загрузки Telegram Web App SDK
-    const checkTelegramWebApp = () => {
-      // Проверяем, что запущено в Telegram и скрипт загружен
-      if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-        const tg = window.Telegram.WebApp;
-        
-        // Инициализируем Web App
-        tg.ready();
-        tg.expand();
-        
-        setIsTelegram(true);
+    // Проверяем, что запущено в Telegram
+    if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      
+      setIsTelegram(true);
 
-        // Получаем данные пользователя из Telegram Web App
-        // initDataUnsafe содержит данные пользователя
-        const tgUser = tg.initDataUnsafe?.user;
+      // Получаем данные пользователя из Telegram Web App
+      const tgUser = tg.initDataUnsafe?.user;
+      if (tgUser) {
+        // Получаем все доступные данные пользователя
+        const userData: TelegramUser = {
+          id: tgUser.id,
+          first_name: tgUser.first_name || '',
+          last_name: tgUser.last_name,
+          username: tgUser.username,
+          language_code: tgUser.language_code,
+          photo_url: tgUser.photo_url, // URL фото профиля (если доступно)
+          is_premium: tgUser.is_premium,
+        };
         
-        console.log('Telegram Web App initialized:', {
-          hasWebApp: !!window.Telegram?.WebApp,
-          hasUser: !!tgUser,
-          initData: tg.initDataUnsafe,
-          user: tgUser
-        });
+        setUser(userData);
         
-        if (tgUser) {
-          // Получаем все доступные данные пользователя
-          const userData: TelegramUser = {
-            id: tgUser.id,
-            first_name: tgUser.first_name || '',
-            last_name: tgUser.last_name,
-            username: tgUser.username,
-            language_code: tgUser.language_code,
-            photo_url: tgUser.photo_url, // URL фото профиля (если доступно)
-            is_premium: tgUser.is_premium,
-          };
-          
-          console.log('Setting user data:', userData);
-          setUser(userData);
-          
-          // Если есть photo_url, используем его
-          if (userData.photo_url) {
-            setAvatarUrl(userData.photo_url);
-          } else {
-            // Пытаемся получить фото через Bot API (если нужно)
-            fetchUserAvatar(tgUser.id);
-          }
+        // Если есть photo_url, используем его
+        if (userData.photo_url) {
+          setAvatarUrl(userData.photo_url);
         } else {
-          // Если пользователя нет в initDataUnsafe, пробуем получить через initData
-          console.warn('User data not found in initDataUnsafe');
+          // Пытаемся получить фото через Bot API (если нужно)
+          // Это можно сделать через бэкенд запрос
+          fetchUserAvatar(tgUser.id);
         }
-
-        setInitData(tg.initDataUnsafe);
-        
-        // Слушаем обновления темы Telegram
-        if (tg.onEvent) {
-          tg.onEvent('themeChanged', () => {
-            // Можно обновить тему приложения
-          });
-        }
-        
-      } else {
-        // Development mode или не в Telegram - используем тестового пользователя
-        console.warn('Telegram Web App not available, using test user');
-        setIsTelegram(false);
-        setUser({
-          id: 694377627,
-          first_name: 'Тестовый',
-          username: 'test_user',
-        });
       }
-    };
 
-    // Проверяем сразу, если скрипт уже загружен
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      checkTelegramWebApp();
+      setInitData(tg.initDataUnsafe);
+      
+      // Слушаем обновления темы Telegram
+      tg.onEvent('themeChanged', () => {
+        // Можно обновить тему приложения
+      });
+      
     } else {
-      // Ждем загрузки скрипта Telegram Web App
-      const scriptCheckInterval = setInterval(() => {
-        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-          clearInterval(scriptCheckInterval);
-          checkTelegramWebApp();
-        }
-      }, 100);
-
-      // Останавливаем проверку через 5 секунд, если скрипт не загрузился
-      setTimeout(() => {
-        clearInterval(scriptCheckInterval);
-        if (!window.Telegram?.WebApp) {
-          console.warn('Telegram Web App script not loaded after 5 seconds');
-          checkTelegramWebApp();
-        }
-      }, 5000);
+      // Development mode - используем тестового пользователя
+      setIsTelegram(false);
+      setUser({
+        id: 694377627,
+        first_name: 'Тестовый',
+        username: 'test_user',
+      });
     }
   }, []);
 
