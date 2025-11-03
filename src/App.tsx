@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "./components/ui/sonner";
 import { Header } from "./components/Header";
 import { BottomNav } from "./components/BottomNav";
@@ -127,6 +128,7 @@ export default function App() {
       <NotificationsSheet open={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
       
       <Toaster />
+      <Analytics />
     </div>
   );
 }
