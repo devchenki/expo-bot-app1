@@ -56,7 +56,13 @@ export function Header({
                 <Menu className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent 
+              align="end" 
+              side="bottom"
+              sideOffset={8}
+              collisionPadding={8}
+              className="w-48 z-[100]"
+            >
               <DropdownMenuItem onClick={() => onMenuItemClick?.("history")}>
                 История изменений
               </DropdownMenuItem>
