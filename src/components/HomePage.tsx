@@ -8,18 +8,6 @@ import { useInstallations } from "../hooks/useInstallations";
 import { useEquipment } from "../hooks/useEquipment";
 import { useActivity } from "../hooks/useActivity";
 
-// Extend Window interface for Telegram WebApp
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: {
-        ready: () => void;
-        expand: () => void;
-      };
-    };
-  }
-}
-
 interface HomePageProps {
   onCreateInstallation: () => void;
   onNavigate?: (page: string) => void;
