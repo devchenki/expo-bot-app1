@@ -10,11 +10,11 @@ export function SettingsPage() {
 
   const handleOpenBot = () => {
     if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.openLink("https://t.me/your_bot_username", {
+      window.Telegram.WebApp.openLink("https://t.me/exporeg_bot", {
         try_instant_view: true
       });
     } else {
-      window.open("https://t.me/your_bot_username", "_blank");
+      window.open("https://t.me/exporeg_bot", "_blank");
     }
   };
 
