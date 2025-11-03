@@ -62,7 +62,22 @@ export function HomePage({ onCreateInstallation, onNavigate }: HomePageProps) {
   
   // Вычисляем статистику
   const totalInstallations = installations.length;
-  const availableLaptops = laptops.filter(l => l.status?.toLowerCase() !== "in-use").length;
+  
+  // Получаем список ID ноутбуков, которые используются в активных установках
+  const occupiedLaptopIds = new Set(
+    installations
+      .map(inst => inst.laptop)
+      .filter(Boolean)
+      .map(l => Number(l))
+  );
+  
+  // Считаем свободные ноутбуки: исключаем те, что используются в установках
+  const availableLaptops = laptops.filter(l => {
+    const isOccupied = occupiedLaptopIds.has(l.id);
+    const isUnavailable = l.status?.toLowerCase() === "in-use" || l.status?.toLowerCase() === "maintenance";
+    // Ноутбук свободен, если он не занят в установке И не имеет статус in-use/maintenance в БД
+    return !isOccupied && !isUnavailable;
+  }).length;
 
   return (
     <div className="space-y-6">
