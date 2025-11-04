@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { Separator } from "./ui/separator";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
 import { Badge } from "./ui/badge";
+import { APP_VERSION, BUILD_DATE, BUILD_NUMBER } from "../config/version";
 
 export function SettingsPage() {
   const { user, initData, isTelegram, avatarUrl } = useTelegramAuth();
@@ -128,9 +129,13 @@ export function SettingsPage() {
             <div className="rounded-md bg-primary/10 p-2">
               <Info className="h-4 w-4 text-primary" />
             </div>
-            <div className="text-left">
+            <div className="flex-1 text-left">
               <p className="text-sm font-medium">ExpoBot</p>
-              <p className="text-xs text-muted-foreground">Версия 1.0.0</p>
+              <div className="space-y-1 mt-1">
+                <p className="text-xs text-muted-foreground">Версия: {APP_VERSION}</p>
+                <p className="text-xs text-muted-foreground">Билд: #{BUILD_NUMBER}</p>
+                <p className="text-xs text-muted-foreground">Дата сборки: {BUILD_DATE}</p>
+              </div>
             </div>
           </div>
           <Separator className="bg-border/40" />

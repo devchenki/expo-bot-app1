@@ -23,8 +23,26 @@ export interface Notification {
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [readNotifications, setReadNotifications] = useState<Set<string>>(() => {
+    // Загружаем прочитанные уведомления из localStorage
+    try {
+      const stored = localStorage.getItem('readNotifications');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   const { installations: activeInstallations } = useInstallations();
   const { events } = useEvents();
+
+  // Сохраняем прочитанные уведомления в localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('readNotifications', JSON.stringify(Array.from(readNotifications)));
+    } catch (error) {
+      console.error('Error saving read notifications:', error);
+    }
+  }, [readNotifications]);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -46,8 +64,9 @@ export function useNotifications() {
         allConsumables.forEach(consumable => {
           const minQuantity = consumable.min_quantity || 0;
           if (consumable.quantity <= minQuantity) {
+            const notificationId = `low_stock_${consumable.type}_${consumable.id}`;
             newNotifications.push({
-              id: `low_stock_${consumable.type}_${consumable.id}`,
+              id: notificationId,
               type: "warning",
               title: "Низкий остаток расходника",
               message: `${consumable.name} (${consumable.type === 'brother' ? 'Brother' : 'Godex'}): осталось ${consumable.quantity} шт. (минимум: ${minQuantity} шт.)`,
@@ -57,7 +76,7 @@ export function useNotifications() {
                 hour: "2-digit",
                 minute: "2-digit",
               }),
-              read: false,
+              read: readNotifications.has(notificationId),
               createdAt: new Date(),
             });
           }
@@ -83,8 +102,9 @@ export function useNotifications() {
             const startDate = new Date(event.start_date!);
             const hoursUntilStart = Math.round((startDate.getTime() - now.getTime()) / (1000 * 60 * 60));
             
+            const notificationId = `event_soon_${event.id}`;
             newNotifications.push({
-              id: `event_soon_${event.id}`,
+              id: notificationId,
               type: "info",
               title: "Мероприятие скоро начнется",
               message: `${event.name} начнется через ${hoursUntilStart} ${hoursUntilStart === 1 ? 'час' : hoursUntilStart < 5 ? 'часа' : 'часов'}`,
@@ -94,7 +114,7 @@ export function useNotifications() {
                 hour: "2-digit",
                 minute: "2-digit",
               }),
-              read: false,
+              read: readNotifications.has(notificationId),
               createdAt: new Date(),
             });
           });
@@ -115,8 +135,9 @@ export function useNotifications() {
         });
 
         if (longActiveInstallations.length > 0) {
+          const notificationId = `long_active_installations`;
           newNotifications.push({
-            id: `long_active_installations`,
+            id: notificationId,
             type: "info",
             title: "Долгие активные установки",
             message: `${longActiveInstallations.length} установок активны более 7 дней`,
@@ -124,7 +145,7 @@ export function useNotifications() {
               day: "numeric",
               month: "long",
             }),
-            read: false,
+            read: readNotifications.has(notificationId),
             createdAt: new Date(),
           });
         }
@@ -141,7 +162,7 @@ export function useNotifications() {
     } finally {
       setLoading(false);
     }
-  }, [activeInstallations, events]);
+  }, [activeInstallations, events, readNotifications]);
 
   useEffect(() => {
     fetchNotifications();
@@ -153,14 +174,25 @@ export function useNotifications() {
   }, [fetchNotifications]);
 
   const markAsRead = useCallback((notificationId: string) => {
+    setReadNotifications(prev => {
+      const newSet = new Set(prev);
+      newSet.add(notificationId);
+      return newSet;
+    });
     setNotifications(prev => 
       prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
     );
   }, []);
 
   const markAllAsRead = useCallback(() => {
+    const allIds = notifications.map(n => n.id);
+    setReadNotifications(prev => {
+      const newSet = new Set(prev);
+      allIds.forEach(id => newSet.add(id));
+      return newSet;
+    });
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }, []);
+  }, [notifications]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
