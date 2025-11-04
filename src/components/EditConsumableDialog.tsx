@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { Separator } from "./ui/separator";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
 import { activityApi } from "../lib/api";
+import { frontendAnalyticsApi } from "../lib/api/analytics";
+import { getUserAvatarUrl } from "../utils/avatarUtils";
 
 interface EditConsumableDialogProps {
   open: boolean;
@@ -72,6 +74,8 @@ export function EditConsumableDialog({ open, onClose, consumable }: EditConsumab
       return;
     }
 
+    const startTime = performance.now();
+    
     try {
       if (consumable.onUpdate) {
         await consumable.onUpdate(newQuantity);
@@ -92,9 +96,19 @@ export function EditConsumableDialog({ open, onClose, consumable }: EditConsumab
         description: message + `. Новый остаток: ${newQuantity} шт`,
       });
 
-      // Создаем запись активности с указанием количества
+      // Получаем аватар пользователя перед логированием активности
+      let avatarUrl: string | null = null;
+      if (user?.id) {
+        try {
+          avatarUrl = await getUserAvatarUrl(user.id, user.photo_url);
+        } catch (avatarError) {
+          console.error("Error getting avatar URL:", avatarError);
+        }
+      }
+
+      // Создаем запись активности с указанием количества и аватаром
+      const oldQuantity = consumable.quantity;
       try {
-        const oldQuantity = consumable.quantity;
         const quantityInfo = oldQuantity !== newQuantity
           ? ` (было: ${oldQuantity} → стало: ${newQuantity})`
           : ` (количество: ${newQuantity})`;
@@ -105,9 +119,31 @@ export function EditConsumableDialog({ open, onClose, consumable }: EditConsumab
           action_type: "update_consumable",
           item_type: consumable.type || "consumable",
           item_name: `${consumable.name}${quantityInfo}`,
+          avatar_url: avatarUrl || undefined,
         });
       } catch (activityError) {
         console.error("Error logging activity:", activityError);
+      }
+
+      // Логируем аналитику фронтенда
+      const responseTime = Math.round(performance.now() - startTime);
+      try {
+        await frontendAnalyticsApi.logAction(
+          'update_consumable',
+          {
+            consumable_type: consumable.type || consumable.id,
+            consumable_id: consumable.id,
+            consumable_name: consumable.name,
+            old_quantity: oldQuantity,
+            new_quantity: newQuantity,
+            change: change,
+          },
+          user?.id,
+          user?.username,
+          responseTime
+        );
+      } catch (analyticsError) {
+        console.error("Error logging frontend analytics:", analyticsError);
       }
 
       // Обновляем активность после изменения расходника

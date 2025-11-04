@@ -176,20 +176,18 @@ export function HomePage({ onCreateInstallation, onNavigate }: HomePageProps) {
                 <div key={activity.id}>
                   <div className="flex items-start gap-3 p-4">
                     <Avatar className="h-9 w-9">
-                      {activity.avatar_url ? (
-                        <AvatarImage 
-                          src={activity.avatar_url} 
-                          alt={activity.user}
-                          onError={(e) => {
-                            console.warn('Failed to load avatar:', activity.avatar_url, 'for user:', activity.user);
-                            // Скрываем изображение при ошибке загрузки, fallback покажется автоматически
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                          onLoad={() => {
-                            console.log('Avatar loaded successfully:', activity.avatar_url, 'for user:', activity.user);
-                          }}
-                        />
-                      ) : null}
+                      <AvatarImage 
+                        src={activity.avatar_url || undefined} 
+                        alt={activity.user}
+                        onError={(e) => {
+                          console.warn('Failed to load avatar:', activity.avatar_url, 'for user:', activity.user);
+                          // Скрываем изображение при ошибке загрузки, fallback покажется автоматически
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                        onLoad={() => {
+                          console.log('Avatar loaded successfully:', activity.avatar_url, 'for user:', activity.user);
+                        }}
+                      />
                       <AvatarFallback className="bg-primary/10 text-xs text-primary">
                         {activity.user?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>

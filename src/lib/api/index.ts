@@ -16,4 +16,5 @@ export { consumablesApi } from './consumables';
 export { statisticsApi } from './statistics';
 export { reportsApi } from './reports';
 export { activityApi } from './activity';
+export { frontendAnalyticsApi } from './analytics';
 

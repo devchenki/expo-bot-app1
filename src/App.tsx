@@ -15,11 +15,16 @@ import { HistoryPage } from "./components/HistoryPage";
 import { HelpPage } from "./components/HelpPage";
 import { EquipmentDetailPage } from "./components/EquipmentDetailPage";
 import { NotificationsSheet } from "./components/NotificationsSheet";
+import { useTelegramAuth } from "./hooks/useTelegramAuth";
+import { frontendAnalyticsApi } from "./lib/api/analytics";
+import { useNotifications } from "./hooks/useNotifications";
 
 // Глобальное событие для обновления активности
 const activityUpdateEvent = new Event('activityNeedsUpdate');
 
 export default function App() {
+  const { user } = useTelegramAuth();
+  const { unreadCount } = useNotifications();
   const [activePage, setActivePage] = useState(() => {
     // Восстанавливаем активную страницу из localStorage или используем "home"
     return localStorage.getItem('activePage') || 'home';
@@ -29,13 +34,28 @@ export default function App() {
   const [equipmentDetailType, setEquipmentDetailType] = useState<"laptop" | "brother" | "godex">("laptop");
   const [equipmentDetailId, setEquipmentDetailId] = useState<number>(15);
   
-  // Отслеживаем изменения страницы для обновления активности
+  // Логируем открытие Web App при инициализации
+  useEffect(() => {
+    if (user) {
+      frontendAnalyticsApi.logWebAppOpen(user.id, user.username);
+    }
+  }, [user]);
+
+  // Отслеживаем изменения страницы для обновления активности и логирования навигации
   useEffect(() => {
     if (activePage === 'home') {
       // При возврате на главную страницу обновляем активность
       window.dispatchEvent(activityUpdateEvent);
     }
-  }, [activePage]);
+    
+    // Логируем навигацию по страницам
+    if (user) {
+      frontendAnalyticsApi.logNavigation(activePage, user.id, user.username, {
+        previousPage: localStorage.getItem('previousPage') || null,
+      });
+      localStorage.setItem('previousPage', activePage);
+    }
+  }, [activePage, user]);
 
   // Сохраняем активную страницу в localStorage при изменении
   useEffect(() => {
@@ -115,11 +135,14 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[600px]">
-        <Header 
-          onSearchClick={() => setActivePage("search")}
-          onNotificationsClick={() => setIsNotificationsOpen(true)}
-          onMenuItemClick={(page) => setActivePage(page)}
-        />
+              <Header 
+                onSearchClick={() => setActivePage("search")}
+                onNotificationsClick={() => setIsNotificationsOpen(true)}
+                onHistoryClick={() => setActivePage("history")}
+                onHelpClick={() => setActivePage("help")}
+                onSettingsClick={() => setActivePage("settings")}
+                unreadNotificationsCount={unreadCount}
+              />
         <main className="px-4 pb-24 pt-6">{renderPage()}</main>
         <BottomNav activePage={activePage} onPageChange={setActivePage} />
       </div>

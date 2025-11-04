@@ -136,7 +136,17 @@ export function InstallationsPage({ isCreateDialogOpen, onCloseCreateDialog, onC
       try {
         await completeInstallation(selectedInstallation.id);
         
-        // Логируем активность
+        // Получаем аватар пользователя
+        let avatarUrl: string | null = null;
+        if (user?.id) {
+          try {
+            avatarUrl = await getUserAvatarUrl(user.id, user.photo_url);
+          } catch (avatarError) {
+            console.error("Error getting avatar URL:", avatarError);
+          }
+        }
+        
+        // Логируем активность с аватаром
         try {
           await activityApi.create({
             user_id: user?.id?.toString() || "",
@@ -144,6 +154,7 @@ export function InstallationsPage({ isCreateDialogOpen, onCloseCreateDialog, onC
             action_type: "complete_installation",
             item_type: "installation",
             item_name: `Стойка ${selectedInstallation.rack}`,
+            avatar_url: avatarUrl || undefined,
           });
         } catch (activityError) {
           console.error("Error logging activity:", activityError);

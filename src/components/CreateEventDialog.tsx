@@ -20,6 +20,7 @@ import { useEvents } from "../hooks/useEvents";
 import { ZONE_RANGES, ZoneLetter } from "../lib/api/config";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
 import { activityApi } from "../lib/api";
+import { getUserAvatarUrl } from "../utils/avatarUtils";
 
 interface CreateEventDialogProps {
   open: boolean;
@@ -100,10 +101,20 @@ export function CreateEventDialog({ open, onClose }: CreateEventDialogProps) {
       // Обновляем список событий
       await refetch();
       
+      // Получаем аватар пользователя
+      let avatarUrl: string | null = null;
+      if (user?.id) {
+        try {
+          avatarUrl = await getUserAvatarUrl(user.id, user.photo_url);
+        } catch (avatarError) {
+          console.error("Error getting avatar URL:", avatarError);
+        }
+      }
+
       // Обновляем активность после создания мероприятия
       window.dispatchEvent(new Event('activityNeedsUpdate'));
 
-      // Логируем активность
+      // Логируем активность с аватаром
       try {
         await activityApi.create({
           user_id: user?.id?.toString() || "",
@@ -111,6 +122,7 @@ export function CreateEventDialog({ open, onClose }: CreateEventDialogProps) {
           action_type: "create_event",
           item_type: "event",
           item_name: formData.name,
+          avatar_url: avatarUrl || undefined,
         });
       } catch (activityError) {
         console.error("Error logging activity:", activityError);

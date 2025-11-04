@@ -21,6 +21,7 @@ import { useEvents } from "../hooks/useEvents";
 import { Event as ApiEvent } from "../lib/api/events";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
 import { activityApi } from "../lib/api";
+import { getUserAvatarUrl } from "../utils/avatarUtils";
 
 interface Event {
   id: number;
@@ -82,7 +83,17 @@ export function EventsPage() {
     try {
       await completeEvent(event.id);
       
-      // Логируем активность
+      // Получаем аватар пользователя
+      let avatarUrl: string | null = null;
+      if (user?.id) {
+        try {
+          avatarUrl = await getUserAvatarUrl(user.id, user.photo_url);
+        } catch (avatarError) {
+          console.error("Error getting avatar URL:", avatarError);
+        }
+      }
+      
+      // Логируем активность с аватаром
       try {
         await activityApi.create({
           user_id: user?.id?.toString() || "",
@@ -90,6 +101,7 @@ export function EventsPage() {
           action_type: "complete_event",
           item_type: "event",
           item_name: event.name,
+          avatar_url: avatarUrl || undefined,
         });
       } catch (activityError) {
         console.error("Error logging activity:", activityError);
@@ -114,7 +126,17 @@ export function EventsPage() {
       try {
         await deleteEvent(eventToDelete.id);
         
-        // Логируем активность
+        // Получаем аватар пользователя
+        let avatarUrl: string | null = null;
+        if (user?.id) {
+          try {
+            avatarUrl = await getUserAvatarUrl(user.id, user.photo_url);
+          } catch (avatarError) {
+            console.error("Error getting avatar URL:", avatarError);
+          }
+        }
+        
+        // Логируем активность с аватаром
         try {
           await activityApi.create({
             user_id: user?.id?.toString() || "",
@@ -122,6 +144,7 @@ export function EventsPage() {
             action_type: "delete_event",
             item_type: "event",
             item_name: eventToDelete.name,
+            avatar_url: avatarUrl || undefined,
           });
         } catch (activityError) {
           console.error("Error logging activity:", activityError);

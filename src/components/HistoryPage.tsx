@@ -162,20 +162,18 @@ export function HistoryPage() {
                   <div key={item.id}>
                     <div className="flex items-start gap-3 p-4">
                       <Avatar className="h-9 w-9">
-                        {item.avatar_url ? (
-                          <AvatarImage 
-                            src={item.avatar_url} 
-                            alt={item.user}
-                            onError={(e) => {
-                              console.warn('Failed to load avatar:', item.avatar_url, 'for user:', item.user);
-                              // Скрываем изображение при ошибке загрузки, fallback покажется автоматически
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                            onLoad={() => {
-                              console.log('Avatar loaded successfully:', item.avatar_url, 'for user:', item.user);
-                            }}
-                          />
-                        ) : null}
+                        <AvatarImage 
+                          src={item.avatar_url || undefined} 
+                          alt={item.user}
+                          onError={(e) => {
+                            console.warn('Failed to load avatar:', item.avatar_url, 'for user:', item.user);
+                            // Скрываем изображение при ошибке загрузки, fallback покажется автоматически
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log('Avatar loaded successfully:', item.avatar_url, 'for user:', item.user);
+                          }}
+                        />
                         <AvatarFallback className="bg-primary/10 text-xs text-primary">
                           {item.user?.[0]?.toUpperCase() || 'U'}
                         </AvatarFallback>

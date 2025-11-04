@@ -16,6 +16,8 @@ import { useInstallations } from "../hooks/useInstallations";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
 import { useEvents } from "../hooks/useEvents";
 import { activityApi } from "../lib/api";
+import { frontendAnalyticsApi } from "../lib/api/analytics";
+import { getUserAvatarUrl } from "../utils/avatarUtils";
 
 interface CreateInstallationDialogProps {
   open: boolean;
@@ -170,7 +172,19 @@ export function CreateInstallationDialog({ open, onClose, onSuccess }: CreateIns
         equipmentDesc += `, ${secondPrinterType === "brother" ? "Brother" : "Godex"} #${selectedSecondPrinter}`;
       }
 
-      // Логируем активность
+      const startTime = performance.now();
+      
+      // Получаем аватар пользователя перед логированием активности
+      let avatarUrl: string | null = null;
+      if (user?.id) {
+        try {
+          avatarUrl = await getUserAvatarUrl(user.id, user.photo_url);
+        } catch (avatarError) {
+          console.error("Error getting avatar URL:", avatarError);
+        }
+      }
+
+      // Логируем активность с аватаром
       try {
         await activityApi.create({
           user_id: user?.id?.toString() || "",
@@ -178,9 +192,32 @@ export function CreateInstallationDialog({ open, onClose, onSuccess }: CreateIns
           action_type: "create_installation",
           item_type: "installation",
           item_name: `Стойка ${selectedZone}${selectedBooth}`,
+          avatar_url: avatarUrl || undefined,
         });
       } catch (activityError) {
         console.error("Error logging activity:", activityError);
+      }
+
+      // Логируем аналитику фронтенда
+      const responseTime = Math.round(performance.now() - startTime);
+      try {
+        await frontendAnalyticsApi.logAction(
+          'create_installation',
+          {
+            rack: `${selectedZone}${selectedBooth}`,
+            laptop: selectedLaptop,
+            printer_type: printerType !== "none" ? printerType : null,
+            printer_number: selectedPrinter || null,
+            second_printer_type: secondPrinterType !== "none" ? secondPrinterType : null,
+            second_printer_number: selectedSecondPrinter || null,
+            event_id: selectedEvent || null,
+          },
+          user?.id,
+          user?.username,
+          responseTime
+        );
+      } catch (analyticsError) {
+        console.error("Error logging frontend analytics:", analyticsError);
       }
 
       toast.success(`Установка ${selectedZone}${selectedBooth} создана`, {

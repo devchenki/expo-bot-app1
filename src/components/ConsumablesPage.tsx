@@ -11,6 +11,8 @@ import { Skeleton } from "./ui/skeleton";
 import { useConsumables } from "../hooks/useConsumables";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
 import { activityApi } from "../lib/api";
+import { frontendAnalyticsApi } from "../lib/api/analytics";
+import { getUserAvatarUrl } from "../utils/avatarUtils";
 
 interface Consumable {
   id: number;
@@ -116,7 +118,17 @@ export function ConsumablesPage() {
                       await updateGodex(item.id, newQty);
                     }
                     
-                    // Создаем запись активности с количеством
+                    // Получаем аватар пользователя
+                    let avatarUrl: string | null = null;
+                    if (user?.id) {
+                      try {
+                        avatarUrl = await getUserAvatarUrl(user.id, user.photo_url);
+                      } catch (avatarError) {
+                        console.error("Error getting avatar URL:", avatarError);
+                      }
+                    }
+                    
+                    // Создаем запись активности с количеством и аватаром
                     try {
                       await activityApi.create({
                         user_id: user?.id?.toString() || "",
@@ -124,9 +136,29 @@ export function ConsumablesPage() {
                         action_type: "update_consumable",
                         item_type: item.type,
                         item_name: `${item.name} (было: ${oldQty} → стало: ${newQty})`,
+                        avatar_url: avatarUrl || undefined,
                       });
                     } catch (activityError) {
                       console.error("Error logging activity:", activityError);
+                    }
+                    
+                    // Логируем аналитику фронтенда
+                    try {
+                      await frontendAnalyticsApi.logAction(
+                        'quick_update_consumable',
+                        {
+                          consumable_type: item.type,
+                          consumable_id: item.id,
+                          consumable_name: item.name,
+                          old_quantity: oldQty,
+                          new_quantity: newQty,
+                          change: -amount,
+                        },
+                        user?.id,
+                        user?.username
+                      );
+                    } catch (analyticsError) {
+                      console.error("Error logging frontend analytics:", analyticsError);
                     }
                     
                     // Обновляем активность после изменения
@@ -153,7 +185,17 @@ export function ConsumablesPage() {
                       await updateGodex(item.id, newQty);
                     }
                     
-                    // Создаем запись активности с количеством
+                    // Получаем аватар пользователя
+                    let avatarUrl: string | null = null;
+                    if (user?.id) {
+                      try {
+                        avatarUrl = await getUserAvatarUrl(user.id, user.photo_url);
+                      } catch (avatarError) {
+                        console.error("Error getting avatar URL:", avatarError);
+                      }
+                    }
+                    
+                    // Создаем запись активности с количеством и аватаром
                     try {
                       await activityApi.create({
                         user_id: user?.id?.toString() || "",
@@ -161,9 +203,29 @@ export function ConsumablesPage() {
                         action_type: "update_consumable",
                         item_type: item.type,
                         item_name: `${item.name} (было: ${oldQty} → стало: ${newQty})`,
+                        avatar_url: avatarUrl || undefined,
                       });
                     } catch (activityError) {
                       console.error("Error logging activity:", activityError);
+                    }
+                    
+                    // Логируем аналитику фронтенда
+                    try {
+                      await frontendAnalyticsApi.logAction(
+                        'quick_update_consumable',
+                        {
+                          consumable_type: item.type,
+                          consumable_id: item.id,
+                          consumable_name: item.name,
+                          old_quantity: oldQty,
+                          new_quantity: newQty,
+                          change: amount,
+                        },
+                        user?.id,
+                        user?.username
+                      );
+                    } catch (analyticsError) {
+                      console.error("Error logging frontend analytics:", analyticsError);
                     }
                     
                     // Обновляем активность после изменения
@@ -212,7 +274,17 @@ export function ConsumablesPage() {
                 await updateGodex(selectedItem.id, quantity);
               }
               
-              // Создаем запись активности с количеством
+              // Получаем аватар пользователя
+              let avatarUrl: string | null = null;
+              if (user?.id) {
+                try {
+                  avatarUrl = await getUserAvatarUrl(user.id, user.photo_url);
+                } catch (avatarError) {
+                  console.error("Error getting avatar URL:", avatarError);
+                }
+              }
+              
+              // Создаем запись активности с количеством и аватаром
               try {
                 await activityApi.create({
                   user_id: user?.id?.toString() || "",
@@ -220,6 +292,7 @@ export function ConsumablesPage() {
                   action_type: "update_consumable",
                   item_type: selectedItem.type,
                   item_name: `${selectedItem.name} (было: ${oldQty} → стало: ${quantity})`,
+                  avatar_url: avatarUrl || undefined,
                 });
               } catch (activityError) {
                 console.error("Error logging activity:", activityError);
