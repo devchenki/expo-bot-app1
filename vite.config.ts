@@ -52,6 +52,15 @@
     build: {
       target: 'esnext',
       outDir: 'dist',
+      rollupOptions: {
+        external: ['xlsx', 'pdfkit'],
+        output: {
+          globals: {
+            xlsx: 'XLSX',
+            pdfkit: 'PDFDocument',
+          },
+        },
+      },
     },
     server: {
       port: 3000,

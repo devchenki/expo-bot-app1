@@ -1,25 +1,30 @@
-// React Hook для работы с мероприятиями
-import { useState, useEffect } from 'react';
+// React Hook для работы с мероприятиями с кэшированием
+import { useState, useEffect, useCallback } from 'react';
 import { eventsApi, Event } from '../lib/api';
 import { toast } from 'sonner';
+import { useApiCache } from './useApiCache';
 
 export function useEvents(month?: number, year?: number) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { get, invalidate } = useApiCache();
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
       let data: Event[];
+      const cacheKey = month && year ? `events:${year}-${month}` : 'events:all';
       
-      if (month && year) {
-        data = await eventsApi.getByMonth(year, month);
-      } else {
-        data = await eventsApi.getAll();
-      }
+      data = await get(
+        cacheKey,
+        () => month && year 
+          ? eventsApi.getByMonth(year, month)
+          : eventsApi.getAll(),
+        5 * 60 * 1000 // 5 минут кэша
+      );
       
       // Автоматически завершаем прошедшие мероприятия
       const today = new Date();
@@ -53,53 +58,57 @@ export function useEvents(month?: number, year?: number) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [month, year, get]);
 
   useEffect(() => {
     fetchEvents();
-  }, [month, year]);
+  }, [fetchEvents]);
 
-  const createEvent = async (data: Omit<Event, 'id'>) => {
+  const createEvent = useCallback(async (data: Omit<Event, 'id'>) => {
     try {
       const newEvent = await eventsApi.create(data);
-      setEvents(prev => [newEvent, ...prev]); // Добавляем в начало списка
+      setEvents(prev => [newEvent, ...prev]);
+      invalidate(/^events:/);
       return newEvent;
     } catch (err) {
       throw err;
     }
-  };
+  }, [invalidate]);
 
-  const updateEvent = async (id: number, data: Partial<Event>) => {
+  const updateEvent = useCallback(async (id: number, data: Partial<Event>) => {
     try {
       const updated = await eventsApi.update(id, data);
       setEvents(prev => prev.map(e => e.id === id ? updated : e));
+      invalidate(/^events:/);
       return updated;
     } catch (err) {
       throw err;
     }
-  };
+  }, [invalidate]);
 
-  const completeEvent = async (id: number) => {
+  const completeEvent = useCallback(async (id: number) => {
     try {
       await eventsApi.complete(id);
       setEvents(prev => prev.map(e => e.id === id ? { ...e, status: 'completed' as const } : e));
+      invalidate(/^events:/);
       toast.success('Мероприятие завершено');
     } catch (err) {
       toast.error('Ошибка завершения мероприятия');
       throw err;
     }
-  };
+  }, [invalidate]);
 
-  const deleteEvent = async (id: number) => {
+  const deleteEvent = useCallback(async (id: number) => {
     try {
       await eventsApi.delete(id);
       setEvents(prev => prev.filter(e => e.id !== id));
+      invalidate(/^events:/);
       toast.success('Мероприятие удалено');
     } catch (err) {
       toast.error('Ошибка удаления мероприятия');
       throw err;
     }
-  };
+  }, [invalidate]);
 
   return {
     events,

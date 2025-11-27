@@ -1,13 +1,16 @@
 import React, { useState } from "react";
-import { TrendingUp, TrendingDown, Package, MapPin, FileText, X } from "lucide-react";
+import { TrendingUp, TrendingDown, Package, MapPin, FileText, X, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { TrendChart } from "./TrendChart";
 import { useInstallations } from "../hooks/useInstallations";
 import { useStatistics } from "../hooks/useStatistics";
 import { useEquipment } from "../hooks/useEquipment";
+import { exportToCSV } from "../lib/export/exporters";
+import { toast } from "sonner";
 
 export function StatisticsPage() {
   const { installations } = useInstallations();
@@ -48,6 +51,24 @@ export function StatisticsPage() {
   const zoneInstallations = selectedZone 
     ? installations.filter(inst => inst.rack?.startsWith(selectedZone))
     : [];
+
+  const handleExportCSV = () => {
+    try {
+      const exportData = installations.map(inst => ({
+        'Стойка': inst.rack,
+        'Ноутбук': inst.laptop,
+        'Принтер 1': inst.printer_type || 'N/A',
+        'Принтер 2': inst.second_printer_type || 'N/A',
+        'Дата': inst.date ? new Date(inst.date).toLocaleDateString('ru-RU') : 'N/A',
+        'Статус': 'Активна',
+      }));
+      exportToCSV(exportData, 'installations.csv');
+      toast.success('Данные успешно загружены');
+    } catch (error) {
+      toast.error('Ошибка при экспорте');
+      console.error(error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -182,10 +203,29 @@ export function StatisticsPage() {
         </DialogContent>
       </Dialog>
 
-      <Button className="w-full shadow-sm" size="lg">
-        <FileText className="mr-2 h-4 w-4" />
-        Сгенерировать PDF отчет
-      </Button>
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium">Экспорт данных</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <Button 
+            onClick={handleExportCSV} 
+            variant="outline" 
+            className="w-full"
+            size="sm"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            CSV
+          </Button>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            size="sm"
+            disabled
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            PDF
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

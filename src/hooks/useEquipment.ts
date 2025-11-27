@@ -1,6 +1,7 @@
-// React Hook для работы с оборудованием
-import { useState, useEffect } from 'react';
+// React Hook для работы с оборудованием с кэшированием
+import { useState, useEffect, useCallback } from 'react';
 import { equipmentApi, Laptop, BrotherPrinter, GodexPrinter } from '../lib/api';
+import { useApiCache } from './useApiCache';
 
 export function useEquipment() {
   const [laptops, setLaptops] = useState<Laptop[]>([]);
@@ -8,16 +9,17 @@ export function useEquipment() {
   const [godexPrinters, setGodexPrinters] = useState<GodexPrinter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { get } = useApiCache();
 
-  const fetchEquipment = async () => {
+  const fetchEquipment = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
       const [laptopsData, brotherData, godexData] = await Promise.all([
-        equipmentApi.getLaptops(),
-        equipmentApi.getBrotherPrinters(),
-        equipmentApi.getGodexPrinters(),
+        get('equipment:laptops', () => equipmentApi.getLaptops(), 5 * 60 * 1000),
+        get('equipment:brother', () => equipmentApi.getBrotherPrinters(), 5 * 60 * 1000),
+        get('equipment:godex', () => equipmentApi.getGodexPrinters(), 5 * 60 * 1000),
       ]);
       
       setLaptops(laptopsData);
@@ -30,11 +32,11 @@ export function useEquipment() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [get]);
 
   useEffect(() => {
     fetchEquipment();
-  }, []);
+  }, [fetchEquipment]);
 
   return {
     laptops,

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Minus, Plus, Printer, Tag } from "lucide-react";
+import { Minus, Plus, Printer, Tag, Package } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -8,6 +8,8 @@ import { Progress } from "./ui/progress";
 import { EditConsumableDialog } from "./EditConsumableDialog";
 import { toast } from "sonner";
 import { Skeleton } from "./ui/skeleton";
+import { ListSkeleton } from "./ui/skeletons";
+import { EmptyState } from "./ui/empty-state";
 import { useConsumables } from "../hooks/useConsumables";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
 import { activityApi } from "../lib/api";
@@ -62,6 +64,15 @@ export function ConsumablesPage() {
     return quantity <= minimum;
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <h2>Расходные материалы</h2>
+        <ListSkeleton count={5} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <h2>Расходные материалы</h2>
@@ -79,6 +90,14 @@ export function ConsumablesPage() {
         </TabsList>
       </Tabs>
 
+      {filteredConsumables.length === 0 ? (
+        <EmptyState
+          icon={<Package className="h-12 w-12" />}
+          title={`Нет расходников ${activeTab === 'brother' ? 'Brother' : 'Godex'}`}
+          description={`Добавьте расходные материалы для ${activeTab === 'brother' ? 'принтеров Brother' : 'принтеров Godex'}`}
+          variant="default"
+        />
+      ) : (
       <div className="space-y-3">
         {filteredConsumables.map((item) => (
           <Card key={item.id} className="border-border/40 bg-card/50">
@@ -252,6 +271,7 @@ export function ConsumablesPage() {
           </Card>
         ))}
       </div>
+      )}
 
       {selectedItem && (
         <EditConsumableDialog
