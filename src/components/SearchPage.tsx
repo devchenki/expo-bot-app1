@@ -4,6 +4,7 @@ import { Card, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Badge } from "./ui/badge";
+import { EmptyState } from "./ui/empty-state";
 import { useInstallations } from "../hooks/useInstallations";
 import { useEquipment } from "../hooks/useEquipment";
 import { useEvents } from "../hooks/useEvents";
@@ -203,12 +204,11 @@ export function SearchPage({ onNavigate }: SearchPageProps) {
 
       <div className="space-y-2">
         {filteredResults.length === 0 ? (
-          <Card className="border-border/40 bg-card/50">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Search className="mb-3 h-12 w-12 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Ничего не найдено</p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={<Search className="h-12 w-12" />}
+            title={searchQuery ? "Результаты не найдены" : "Начните поиск"}
+            description={searchQuery ? `Нет результатов для "${searchQuery}"` : "Введите текст для поиска по стойкам, оборудованию, событиям и расходникам"}
+          />
         ) : (
           filteredResults.map((result) => (
             <Card

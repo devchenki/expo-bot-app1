@@ -6,6 +6,8 @@ import { Button } from "./ui/button";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
+import { ListSkeleton } from "./ui/skeletons";
+import { EmptyState } from "./ui/empty-state";
 import { useEquipment } from "../hooks/useEquipment";
 import { useInstallations } from "../hooks/useInstallations";
 
@@ -108,6 +110,15 @@ export function EquipmentPage({ onViewDetails }: EquipmentPageProps) {
     return <Tag className="h-5 w-5" />;
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <h2>Оборудование</h2>
+        <ListSkeleton count={5} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <h2>Оборудование</h2>
@@ -129,25 +140,16 @@ export function EquipmentPage({ onViewDetails }: EquipmentPageProps) {
         </TabsList>
       </Tabs>
 
-      {loading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <Card key={i} className="border-border/40 bg-card/50">
-              <CardContent className="p-4 space-y-3">
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : filteredEquipment.length === 0 ? (
-        <Card className="border-border/40 bg-card/50">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Package className="mb-3 h-12 w-12 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Нет оборудования</p>
-          </CardContent>
-        </Card>
+      {filteredEquipment.length === 0 ? (
+        <EmptyState
+          icon={<Package className="h-12 w-12" />}
+          title={`Нет ${
+            activeTab === 'laptops' ? 'ноутбуков' : 
+            activeTab === 'brother' ? 'принтеров Brother' : 
+            'принтеров Godex'
+          }`}
+          description="Добавьте оборудование в систему"
+        />
       ) : (
         <div className="space-y-3">
           {filteredEquipment.map((item) => (
