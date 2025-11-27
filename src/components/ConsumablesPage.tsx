@@ -271,6 +271,7 @@ export function ConsumablesPage() {
           </Card>
         ))}
       </div>
+      )}
 
       {selectedItem && (
         <EditConsumableDialog
