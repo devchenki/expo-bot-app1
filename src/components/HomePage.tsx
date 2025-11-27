@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { CardSkeleton, ListSkeleton } from "./ui/skeletons";
 import { useInstallations } from "../hooks/useInstallations";
 import { useEquipment } from "../hooks/useEquipment";
 import { useActivity } from "../hooks/useActivity";
@@ -14,9 +15,11 @@ interface HomePageProps {
 }
 
 export function HomePage({ onCreateInstallation, onNavigate }: HomePageProps) {
-  const { installations } = useInstallations();
-  const { laptops } = useEquipment();
-  const { activities: recentActivities, refetch: refetchActivity } = useActivity(5);
+  const { installations, loading: installationsLoading } = useInstallations();
+  const { laptops, loading: equipmentLoading } = useEquipment();
+  const { activities: recentActivities, refetch: refetchActivity, loading: activitiesLoading } = useActivity(5);
+
+  const isLoading = installationsLoading || equipmentLoading;
   
   // Обновляем активность при возврате на страницу и периодически
   useEffect(() => {
@@ -66,6 +69,24 @@ export function HomePage({ onCreateInstallation, onNavigate }: HomePageProps) {
     // Ноутбук свободен, если он не занят в установке И не имеет статус in-use/maintenance в БД
     return !isOccupied && !isUnavailable;
   }).length;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="mb-2">Добро пожаловать!</h2>
+          <p className="text-muted-foreground">
+            Загрузка данных...
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+        <ListSkeleton count={3} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

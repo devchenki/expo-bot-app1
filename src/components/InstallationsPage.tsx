@@ -7,6 +7,8 @@ import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { CreateInstallationDialog } from "./CreateInstallationDialog";
 import { toast } from "sonner";
 import { Skeleton } from "./ui/skeleton";
+import { ListSkeleton, CardSkeleton } from "./ui/skeletons";
+import { EmptyState } from "./ui/empty-state";
 import {
   AlertDialog,
   AlertDialogAction,

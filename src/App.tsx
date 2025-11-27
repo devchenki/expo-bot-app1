@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "./components/ui/sonner";
 import { Header } from "./components/Header";
 import { BottomNav } from "./components/BottomNav";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { HomePage } from "./components/HomePage";
 import { InstallationsPage } from "./components/InstallationsPage";
 import { EquipmentPage } from "./components/EquipmentPage";
@@ -133,26 +134,28 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[600px]">
-              <Header 
-                onSearchClick={() => setActivePage("search")}
-                onNotificationsClick={() => setIsNotificationsOpen(true)}
-                onHistoryClick={() => setActivePage("history")}
-                onHelpClick={() => setActivePage("help")}
-                onSettingsClick={() => setActivePage("settings")}
-                unreadNotificationsCount={unreadCount}
-              />
-        <main className="px-4 pb-24 pt-6">{renderPage()}</main>
-        <BottomNav activePage={activePage} onPageChange={setActivePage} />
-      </div>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-[600px]">
+          <Header 
+            onSearchClick={() => setActivePage("search")}
+            onNotificationsClick={() => setIsNotificationsOpen(true)}
+            onHistoryClick={() => setActivePage("history")}
+            onHelpClick={() => setActivePage("help")}
+            onSettingsClick={() => setActivePage("settings")}
+            unreadNotificationsCount={unreadCount}
+          />
+          <main className="px-4 pb-24 pt-6">{renderPage()}</main>
+          <BottomNav activePage={activePage} onPageChange={setActivePage} />
+        </div>
 
-      {/* Modals and Sheets */}
-      <NotificationsSheet open={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
-      
-      <Toaster />
-      <Analytics />
-    </div>
+        {/* Modals and Sheets */}
+        <NotificationsSheet open={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
+        
+        <Toaster />
+        <Analytics />
+      </div>
+    </ErrorBoundary>
   );
 }
 
